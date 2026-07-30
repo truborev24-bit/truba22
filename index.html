@@ -165,44 +165,41 @@
 </div>
 
 <script>
-const COMPANIES = [
-  {name:"Haier Smart Home Co., Ltd", cn:"海尔智家", type:"factory", industry:"Электроника и бытовая техника",
-   website:"https://www.haier.com/global", email:"finance@haier.com", phone:"+86-532-88931670", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/haier-group", verified:true,
-   flagship:{name:"Умный холодильник со Smart Inverter", tag:"Новинка сезона", desc:"Линейка холодильников с интеллектуальным инверторным компрессором — экономия энергии и точный контроль температуры. Часть из 130+ новых продуктов, показанных на Canton Fair.", emoji:"🧊",
-   img:"haier.jpg"}},
-  {name:"Midea Group Co., Ltd", cn:"美的集团", type:"factory", industry:"Электроника и бытовая техника",
-   website:"https://www.midea.com/global", email:"sales@midea.com", phone:"(973) 539-5330", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/midea", verified:true,
-   flagship:{name:"Стиральная машина MF200 / MAN01W170D", tag:"Новая модель 2025", desc:"Фронтальная загрузка, увеличенный барабан (9–17 кг), тихий инверторный мотор. Флагман бытовой линейки на выставке.", emoji:"🌀", img:null}},
-  {name:"Gree Electric Appliances Inc. of Zhuhai", cn:"珠海格力电器", type:"factory", industry:"Электроника и бытовая техника",
-   website:"https://global.gree.com/", email:"gree@cn.gree.com", phone:"+86-756-8614883", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/gree-electric-appliances", verified:true,
-   flagship:{name:"Линейка кондиционеров нового поколения", tag:"50 новинок", desc:"Жилые и коммерческие сплит-системы с акцентом на энергоэффективность. Показали 50 новых продуктов, экспансия в Европу и Латинскую Америку.", emoji:"❄️", img:null}},
-  {name:"SOKANY (Yiwu Mingge Electric Appliance Co.)", cn:"义乌明格电器", type:"trader", industry:"Малая бытовая техника",
-   website:"https://www.sokany.com/", email:null, phone:null, whatsapp:null, wechat:null, linkedin:null, verified:false,
-   flagship:{name:"Кофемашина + паровая щётка + стайлер", tag:"Ассортимент выставки", desc:"Компактная бытовая техника для дома: капсульная кофемашина, паровая щётка для одежды, стайлер для волос — представлены на стенде Canton Fair.", emoji:"☕", img:null}},
-  {name:"DOBOT Technology", cn:"深圳越疆科技", type:"factory", industry:"Робототехника и автоматизация",
-   website:"https://www.dobot-robots.com", email:null, phone:"+1 (877) 362-6887", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/dobotrobotics", verified:true,
-   flagship:{name:"Робот-бариста (коллаборативная рука)", tag:"Хит выставки", desc:"Полностью автоматизированный робот для приготовления кофе на базе коллаборативного манипулятора DOBOT — один из самых фотографируемых стендов Canton Fair.", emoji:"🤖",
-   img:"dobot.jpg"}},
-  {name:"XAG (Xaircraft Agricultural Technology)", cn:"极飞科技", type:"factory", industry:"Агротех и дроны",
-   website:"https://xa.com/en", email:null, phone:null, whatsapp:null, wechat:null, linkedin:"linkedin.com/company/xag", verified:false,
-   flagship:{name:"Сельскохозяйственный дрон XAG P100", tag:"Флагман линейки", desc:"Дрон-опрыскиватель для точного земледелия, большой бак и автономная навигация. Поставляется в 70+ стран.", emoji:"🚁", img:null}},
-  {name:"X-Human (Lingdu Intel-tech Development)", cn:"凌度智能科技", type:"factory", industry:"Робототехника и автоматизация",
-   website:"https://x-humanbot.com/", email:"Info@gd-ldznkj.com", phone:"+86-400-833-7577", whatsapp:"0086 13928991258", wechat:null, linkedin:"linkedin.com/company/lingdu-guangdong", verified:true,
-   flagship:{name:"Робот для мойки фасадов Lingkong K3", tag:"Дебют на выставке", desc:"Автономный робот для очистки фасадов высотных зданий. 200+ патентов, дебютировал в главном павильоне Canton Fair.", emoji:"🧽", img:null}},
-  {name:"Chengde Huicai Glassware Co.", cn:"承德汇彩玻璃", type:"factory", industry:"Стекло и декор",
-   website:null, email:null, phone:null, whatsapp:null, wechat:null, linkedin:null, verified:false,
-   flagship:{name:"Ваза Fairy Glass Vase", tag:"🥇 Золото CF Design Award 2025", desc:"Художественное ручное выдувание стекла, современный 3D-силуэт. Премиальный сегмент домашнего декора.", emoji:"🏺", img:null}},
-  {name:"Greenawn (Outdoor Living Solutions)", cn:null, type:"factory", industry:"Уличная мебель",
-   website:"https://www.greenawn.com/", email:null, phone:null, whatsapp:null, wechat:null, linkedin:null, verified:false,
-   flagship:{name:"Пергола Villa Louvered Pergola", tag:"🥈 Серебро CF Design Award 2025", desc:"Алюминиевая пергола с поворотными жалюзи-ламелями, высокопрочный сплав, защита от непогоды.", emoji:"🏡",
-   img:"greenawn.jpg"}},
-  {name:"Shiseido Company, Limited", cn:"資生堂", type:"brand", industry:"Красота и косметика",
-   website:"https://corp.shiseido.com/en/", email:null, phone:"+81-3-3572-5111", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/shiseido", verified:true,
-   flagship:{name:"Линейка премиальной сыворотки Ultimune", tag:"Флагман бренда", desc:"Одна из ключевых линеек ухода за кожей бренда, представлена на CBE 2026 наряду с новинками для азиатского рынка.", emoji:"💄", img:null}},
-  {name:"Proya Cosmetics Co., Ltd", cn:"珀莱雅化妆品", type:"brand", industry:"Красота и косметика",
-   website:"https://www.proya-group.com/en/", email:null, phone:null, whatsapp:null, wechat:null, linkedin:null, verified:false,
-   flagship:{name:"Бренд-портфолио: PROYA, TIMAGE, HAPSODE", tag:"Ассортимент CBE 2026", desc:"Несколько суббрендов под одной группой — от масс-маркета до премиального ухода. Активно растущая китайская beauty-платформа.", emoji:"✨", img:null}},
-];
+const SUPABASE_URL = "https://ujaxbpewxkkciqufgngl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_tgtetbguwWGFy8rz_D5xCA_j95eY53U";
+
+let COMPANIES = [];
+
+async function loadData(){
+  document.getElementById('cards').innerHTML = '<div class="legend" style="text-align:center">Загрузка данных…</div>';
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/companies?select=*,flagship_products(*)&order=name.asc`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+
+    COMPANIES = rows.map(r => {
+      const fp = (r.flagship_products && r.flagship_products[0]) || null;
+      return {
+        name: r.name, cn: r.name_cn, type: r.business_type, industry: r.industry,
+        website: r.website, email: r.email, phone: r.phone, whatsapp: r.whatsapp,
+        wechat: r.wechat, linkedin: r.linkedin, verified: r.verified,
+        flagship: fp ? {
+          name: fp.name, tag: fp.tag, desc: fp.description,
+          img: fp.image_url, emoji: "📦"
+        } : { name: "Новинка уточняется", tag: "", desc: "Информация о флагманском товаре пока не собрана.", emoji: "📦", img: null }
+      };
+    });
+
+    renderFilters();
+    render();
+  } catch (err) {
+    document.getElementById('cards').innerHTML =
+      `<div class="legend" style="text-align:center">Не удалось загрузить данные (${err.message}). Обновите страницу.</div>`;
+  }
+}
 
 const TYPE_LABELS = {
   factory: {label:"ФАБРИКА", cls:"type-factory"},
@@ -290,7 +287,7 @@ document.getElementById('search').addEventListener('input', e=>{
 });
 
 renderFilters();
-render();
+loadData();
 </script>
 </body>
 </html>
