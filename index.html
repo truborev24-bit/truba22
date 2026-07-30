@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>China Expo Hub — Контакты</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EDF0F2; --surface:#FFFFFF; --surface-2:#E3E8EA;
+    --ink:#1B2430; --ink-soft:#5B6773; --border:#D3D8DB;
+    --seal:#B4302A; --seal-ink:#7A211D; --gold:#A9822E;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:40px;
+  }
+  .wrap{max-width:640px; margin:0 auto; padding:20px 16px 0;}
+
+  header{display:flex; align-items:center; gap:12px; margin-bottom:6px;}
+  .stamp{
+    width:44px; height:44px; border-radius:50%;
+    border:2px solid var(--seal); color:var(--seal);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Newsreader',serif; font-weight:600; font-size:19px;
+    transform:rotate(-6deg); flex-shrink:0;
+  }
+  h1{font-family:'Newsreader',serif; font-weight:600; font-size:21px; letter-spacing:-0.01em;}
+  .sub{color:var(--ink-soft); font-size:12.5px; margin-top:2px;}
+
+  .exhibition-strip{
+    margin:16px 0 14px; padding:12px 14px; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); font-size:12.5px; color:var(--ink-soft);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .exhibition-strip b{color:var(--ink); font-family:'Newsreader',serif; font-weight:600; font-size:14.5px;}
+  .exhibition-strip .count{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11.5px;}
+
+  /* Business type filter */
+  .filters{display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; scrollbar-width:none;}
+  .filters::-webkit-scrollbar{display:none;}
+  .chip{
+    flex-shrink:0; padding:7px 14px; border-radius:20px; border:1px solid var(--border);
+    background:var(--surface); font-size:12.5px; color:var(--ink-soft); cursor:pointer; white-space:nowrap;
+    display:flex; align-items:center; gap:6px;
+  }
+  .chip .dot{width:7px; height:7px; border-radius:50%;}
+  .chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  .search-row{margin-bottom:16px;}
+  .search-row input{
+    width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface); font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink);
+  }
+  .search-row input::placeholder{color:var(--ink-soft);}
+
+  /* Contact cards */
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; margin-bottom:10px; position:relative;
+  }
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
+  .card-name{font-family:'Newsreader',serif; font-weight:600; font-size:16px; line-height:1.3;}
+  .card-cn{font-size:11.5px; color:var(--ink-soft); margin-top:1px;}
+  .type-badge{
+    font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:500; letter-spacing:.03em;
+    padding:3px 8px; border-radius:20px; white-space:nowrap; flex-shrink:0; margin-top:2px;
+    display:flex; align-items:center; gap:5px;
+  }
+  .type-badge .dot{width:6px; height:6px; border-radius:50%;}
+  .type-factory{background:#EAF3EC; color:#2E6B3E;}
+  .type-factory .dot{background:#2E6B3E;}
+  .type-trader{background:#FBEDEC; color:var(--seal-ink);}
+  .type-trader .dot{background:var(--seal);}
+  .type-brand{background:#F2ECFB; color:#5B3E9E;}
+  .type-brand .dot{background:#5B3E9E;}
+
+  .card-industry{
+    font-size:11.5px; color:var(--gold); border:1px solid var(--gold); border-radius:6px;
+    padding:2px 8px; font-family:'IBM Plex Mono',monospace; display:inline-block; margin-bottom:12px;
+  }
+
+  .contact-grid{display:flex; flex-direction:column; gap:7px; margin-bottom:10px;}
+  .contact-row{display:flex; align-items:center; gap:9px; font-size:13px;}
+  .contact-row .ico{
+    width:22px; height:22px; border-radius:6px; background:var(--surface-2);
+    display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;
+  }
+  .contact-row a{color:var(--ink); text-decoration:none; word-break:break-all;}
+  .contact-row a:hover{color:var(--seal);}
+  .contact-row.muted{color:var(--ink-soft); opacity:.55;}
+  .contact-row.muted .ico{background:var(--surface-2);}
+
+  .card-foot{
+    display:flex; justify-content:space-between; align-items:center; margin-top:12px;
+    padding-top:12px; border-top:1px dashed var(--border); font-size:11.5px; color:var(--ink-soft);
+  }
+  .verified{display:flex; align-items:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:10px;}
+  .verified .dot{width:6px; height:6px; border-radius:50%; background:#2E6B3E;}
+
+  /* Flagship product block */
+  .flagship{
+    background:linear-gradient(135deg,#FBF8F1,#F3ECDC); border:1px solid #E5D9B8; border-radius:12px;
+    padding:14px; margin-bottom:12px; display:flex; gap:12px; align-items:flex-start;
+  }
+  .flagship-icon{
+    width:64px; height:64px; border-radius:10px; background:var(--surface); border:1px solid #E5D9B8;
+    display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0;
+  }
+  .flagship-body{flex:1; min-width:0;}
+  .flagship-tag{
+    font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--gold); letter-spacing:.03em;
+    margin-bottom:3px; display:block;
+  }
+  .flagship-name{font-family:'Newsreader',serif; font-weight:600; font-size:14.5px; margin-bottom:4px; line-height:1.25;}
+  .flagship-desc{font-size:12px; color:var(--ink-soft); line-height:1.45;}
+
+  .legend{
+    margin-top:22px; padding:14px; background:var(--surface); border:1px dashed var(--border);
+    border-radius:var(--radius); font-size:11.5px; color:var(--ink-soft); line-height:1.7;
+  }
+  .legend b{color:var(--ink); font-family:'IBM Plex Mono',monospace; font-size:10.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="stamp">中</div>
+    <div>
+      <h1>Контакты участников</h1>
+      <div class="sub">Тестовая модель · ручной сбор из открытых источников</div>
+    </div>
+  </header>
+
+  <div class="exhibition-strip">
+    <div>
+      <b>Canton Fair 2025, Осень · Фаза 1</b><br>
+      138-я сессия, окт 2025
+    </div>
+    <div class="count">11 / 900+ найдено</div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="search-row">
+    <input type="text" id="search" placeholder="Поиск по названию компании...">
+  </div>
+
+  <div id="cards"></div>
+
+  <div class="legend">
+    <b>КАК ЧИТАТЬ КЛАССИФИКАЦИЮ</b><br>
+    <span style="color:#2E6B3E">●</span> Фабрика — есть производственные мощности, OEM/ODM, найдено на сайте/в профиле<br>
+    <span style="color:var(--seal)">●</span> Трейдер/Дистрибьютор — торговая компания, посредник, wholesale<br>
+    <span style="color:#5B3E9E">●</span> Частный бренд — молодая компания, D2C/онлайн модель<br><br>
+    Контакты помечены серым и приглушены, если не найдены в открытых источниках — это честный пробел, не ошибка.
+  </div>
+
+</div>
+
+<script>
+const COMPANIES = [
+  {name:"Haier Smart Home Co., Ltd", cn:"海尔智家", type:"factory", industry:"Электроника и бытовая техника",
+   website:"https://www.haier.com/global", email:"finance@haier.com", phone:"+86-532-88931670", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/haier-group", verified:true,
+   flagship:{name:"Умный холодильник со Smart Inverter", tag:"Новинка сезона", desc:"Линейка холодильников с интеллектуальным инверторным компрессором — экономия энергии и точный контроль температуры. Часть из 130+ новых продуктов, показанных на Canton Fair.", emoji:"🧊",
+   img:"https://image.haier.com/in/refrigerators/W020191007526004821242_480.jpg"}},
+  {name:"Midea Group Co., Ltd", cn:"美的集团", type:"factory", industry:"Электроника и бытовая техника",
+   website:"https://www.midea.com/global", email:"sales@midea.com", phone:"(973) 539-5330", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/midea", verified:true,
+   flagship:{name:"Стиральная машина MF200 / MAN01W170D", tag:"Новая модель 2025", desc:"Фронтальная загрузка, увеличенный барабан (9–17 кг), тихий инверторный мотор. Флагман бытовой линейки на выставке.", emoji:"🌀", img:null}},
+  {name:"Gree Electric Appliances Inc. of Zhuhai", cn:"珠海格力电器", type:"factory", industry:"Электроника и бытовая техника",
+   website:"https://global.gree.com/", email:"gree@cn.gree.com", phone:"+86-756-8614883", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/gree-electric-appliances", verified:true,
+   flagship:{name:"Линейка кондиционеров нового поколения", tag:"50 новинок", desc:"Жилые и коммерческие сплит-системы с акцентом на энергоэффективность. Показали 50 новых продуктов, экспансия в Европу и Латинскую Америку.", emoji:"❄️", img:null}},
+  {name:"SOKANY (Yiwu Mingge Electric Appliance Co.)", cn:"义乌明格电器", type:"trader", industry:"Малая бытовая техника",
+   website:"https://www.sokany.com/", email:null, phone:null, whatsapp:null, wechat:null, linkedin:null, verified:false,
+   flagship:{name:"Кофемашина + паровая щётка + стайлер", tag:"Ассортимент выставки", desc:"Компактная бытовая техника для дома: капсульная кофемашина, паровая щётка для одежды, стайлер для волос — представлены на стенде Canton Fair.", emoji:"☕", img:null}},
+  {name:"DOBOT Technology", cn:"深圳越疆科技", type:"factory", industry:"Робототехника и автоматизация",
+   website:"https://www.dobot-robots.com", email:null, phone:"+1 (877) 362-6887", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/dobotrobotics", verified:true,
+   flagship:{name:"Робот-бариста (коллаборативная рука)", tag:"Хит выставки", desc:"Полностью автоматизированный робот для приготовления кофе на базе коллаборативного манипулятора DOBOT — один из самых фотографируемых стендов Canton Fair.", emoji:"🤖",
+   img:"https://static.wixstatic.com/media/5d7b7e_2bd0687408c3405899da6bdbd0c0cecc~mv2.jpg"}},
+  {name:"XAG (Xaircraft Agricultural Technology)", cn:"极飞科技", type:"factory", industry:"Агротех и дроны",
+   website:"https://xa.com/en", email:null, phone:null, whatsapp:null, wechat:null, linkedin:"linkedin.com/company/xag", verified:false,
+   flagship:{name:"Сельскохозяйственный дрон XAG P100", tag:"Флагман линейки", desc:"Дрон-опрыскиватель для точного земледелия, большой бак и автономная навигация. Поставляется в 70+ стран.", emoji:"🚁", img:null}},
+  {name:"X-Human (Lingdu Intel-tech Development)", cn:"凌度智能科技", type:"factory", industry:"Робототехника и автоматизация",
+   website:"https://x-humanbot.com/", email:"Info@gd-ldznkj.com", phone:"+86-400-833-7577", whatsapp:"0086 13928991258", wechat:null, linkedin:"linkedin.com/company/lingdu-guangdong", verified:true,
+   flagship:{name:"Робот для мойки фасадов Lingkong K3", tag:"Дебют на выставке", desc:"Автономный робот для очистки фасадов высотных зданий. 200+ патентов, дебютировал в главном павильоне Canton Fair.", emoji:"🧽", img:null}},
+  {name:"Chengde Huicai Glassware Co.", cn:"承德汇彩玻璃", type:"factory", industry:"Стекло и декор",
+   website:null, email:null, phone:null, whatsapp:null, wechat:null, linkedin:null, verified:false,
+   flagship:{name:"Ваза Fairy Glass Vase", tag:"🥇 Золото CF Design Award 2025", desc:"Художественное ручное выдувание стекла, современный 3D-силуэт. Премиальный сегмент домашнего декора.", emoji:"🏺", img:null}},
+  {name:"Greenawn (Outdoor Living Solutions)", cn:null, type:"factory", industry:"Уличная мебель",
+   website:"https://www.greenawn.com/", email:null, phone:null, whatsapp:null, wechat:null, linkedin:null, verified:false,
+   flagship:{name:"Пергола Villa Louvered Pergola", tag:"🥈 Серебро CF Design Award 2025", desc:"Алюминиевая пергола с поворотными жалюзи-ламелями, высокопрочный сплав, защита от непогоды.", emoji:"🏡",
+   img:"https://greenawngroup.com/wp-content/uploads/2024/09/9100a-1.jpg"}},
+  {name:"Shiseido Company, Limited", cn:"資生堂", type:"brand", industry:"Красота и косметика",
+   website:"https://corp.shiseido.com/en/", email:null, phone:"+81-3-3572-5111", whatsapp:null, wechat:null, linkedin:"linkedin.com/company/shiseido", verified:true,
+   flagship:{name:"Линейка премиальной сыворотки Ultimune", tag:"Флагман бренда", desc:"Одна из ключевых линеек ухода за кожей бренда, представлена на CBE 2026 наряду с новинками для азиатского рынка.", emoji:"💄", img:null}},
+  {name:"Proya Cosmetics Co., Ltd", cn:"珀莱雅化妆品", type:"brand", industry:"Красота и косметика",
+   website:"https://www.proya-group.com/en/", email:null, phone:null, whatsapp:null, wechat:null, linkedin:null, verified:false,
+   flagship:{name:"Бренд-портфолио: PROYA, TIMAGE, HAPSODE", tag:"Ассортимент CBE 2026", desc:"Несколько суббрендов под одной группой — от масс-маркета до премиального ухода. Активно растущая китайская beauty-платформа.", emoji:"✨", img:null}},
+];
+
+const TYPE_LABELS = {
+  factory: {label:"ФАБРИКА", cls:"type-factory"},
+  trader: {label:"ТРЕЙДЕР", cls:"type-trader"},
+  brand: {label:"БРЕНД", cls:"type-brand"}
+};
+
+let activeType = "all";
+let query = "";
+
+function contactRow(icon, value, isLink){
+  if(!value){
+    return `<div class="contact-row muted"><div class="ico">${icon}</div><span>не найдено в открытых источниках</span></div>`;
+  }
+  const content = isLink ? `<a href="${value.startsWith('http')?value:'https://'+value}" target="_blank">${value.replace('https://','').replace('http://','')}</a>` : `<span>${value}</span>`;
+  return `<div class="contact-row"><div class="ico">${icon}</div>${content}</div>`;
+}
+
+function render(){
+  const filtered = COMPANIES.filter(c=>{
+    const typeMatch = activeType === "all" || c.type === activeType;
+    const qMatch = !query || c.name.toLowerCase().includes(query.toLowerCase());
+    return typeMatch && qMatch;
+  });
+
+  document.getElementById('cards').innerHTML = filtered.map(c=>{
+    const t = TYPE_LABELS[c.type];
+    return `
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-name">${c.name}</div>
+          ${c.cn ? `<div class="card-cn">${c.cn}</div>` : ''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:9px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; letter-spacing:.03em; margin-bottom:4px;">ТИП БИЗНЕСА</div>
+          <div class="type-badge ${t.cls}"><span class="dot"></span>${t.label}</div>
+        </div>
+      </div>
+      <div class="card-industry">${c.industry}</div>
+      <div class="flagship">
+        <div class="flagship-icon" ${c.flagship.img ? `style="padding:0; overflow:hidden;"` : ''}>
+          ${c.flagship.img
+            ? `<img src="${c.flagship.img}" alt="${c.flagship.name}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.padding='';this.outerHTML='${c.flagship.emoji}';">`
+            : c.flagship.emoji}
+        </div>
+        <div class="flagship-body">
+          <span class="flagship-tag">${c.flagship.tag}</span>
+          <div class="flagship-name">${c.flagship.name}</div>
+          <div class="flagship-desc">${c.flagship.desc}</div>
+        </div>
+      </div>
+      <div class="contact-grid">
+        ${contactRow('🌐', c.website, true)}
+        ${contactRow('✉️', c.email, false)}
+        ${contactRow('📞', c.phone, false)}
+        ${contactRow('💬', c.whatsapp, false)}
+        ${contactRow('🔗', c.linkedin, true)}
+      </div>
+      <div class="card-foot">
+        <span>Canton Fair 2025 · Осень</span>
+        ${c.verified ? '<div class="verified"><span class="dot"></span>ПОДТВЕРЖДЕНО</div>' : '<div class="verified" style="opacity:.4"><span class="dot" style="background:var(--ink-soft)"></span>ЧАСТИЧНО</div>'}
+      </div>
+    </div>`;
+  }).join('') || '<div class="legend" style="text-align:center">Ничего не найдено по этому фильтру</div>';
+}
+
+function renderFilters(){
+  const types = [
+    {key:'all', label:'Все компании', dot:null},
+    {key:'factory', label:'Фабрики', dot:'#2E6B3E'},
+    {key:'trader', label:'Трейдеры', dot:'#B4302A'},
+    {key:'brand', label:'Бренды', dot:'#5B3E9E'},
+  ];
+  document.getElementById('filters').innerHTML = types.map(t=>`
+    <div class="chip ${activeType===t.key?'active':''}" onclick="setType('${t.key}')">
+      ${t.dot ? `<span class="dot" style="background:${t.dot}"></span>` : ''}${t.label}
+    </div>`).join('');
+}
+
+function setType(t){ activeType = t; renderFilters(); render(); }
+
+document.getElementById('search').addEventListener('input', e=>{
+  query = e.target.value; render();
+});
+
+renderFilters();
+render();
+</script>
+</body>
+</html>
