@@ -169,6 +169,18 @@
   }
   .industry-chip.active{background:var(--gold); color:#fff; border-color:var(--gold);}
 
+  .city-filters{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .city-chip{
+    flex-shrink:0; padding:7px 14px; border-radius:20px; border:1.5px solid var(--seal);
+    background:var(--surface); font-size:12.5px; color:var(--seal-ink); font-weight:500; cursor:pointer; white-space:nowrap;
+  }
+  .city-chip.active{background:var(--seal); color:#fff; border-color:var(--seal);}
+  .city-more-toggle{
+    flex-shrink:0; padding:7px 14px; border-radius:20px; border:1.5px dashed var(--ink-soft);
+    background:var(--surface); font-size:12.5px; color:var(--ink-soft); font-weight:500; cursor:pointer; white-space:nowrap;
+  }
+  .industry-chip.is-empty, .city-chip.is-empty{opacity:.4;}
+
   .expo-link-companies{
     display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:8px 12px;
     background:var(--seal); border-radius:8px; font-size:12px; color:#fff; font-weight:500;
@@ -206,6 +218,7 @@
   <div id="screenExpo">
     <div class="filters" id="statusFilters"></div>
     <div class="industry-filters" id="industryFilters"></div>
+    <div class="city-filters" id="cityFilters"></div>
     <div class="search-row">
       <input type="text" id="expoSearch" placeholder="Поиск по названию или городу...">
     </div>
@@ -378,6 +391,8 @@ let EXHIBITIONS = [];
 let expoStatus = "all";
 let expoIndustry = "all";
 let expoQuery = "";
+let expoCity = "all";
+let cityExpanded = false;
 
 function switchTab(tab){
   document.getElementById('tabExpo').classList.toggle('active', tab==='expo');
@@ -408,10 +423,7 @@ async function loadExhibitions(){
       hasCompanies: r.name_ru === 'Canton Fair 2025 Осень Фаза1'
     }));
 
-    const industries = [...new Set(EXHIBITIONS.map(e=>e.industry))].sort();
-    renderIndustryChips(industries);
-
-    renderStatusFilters();
+    updateAllFilters();
     renderExpo();
   } catch (err) {
     document.getElementById('expoCards').innerHTML =
@@ -419,19 +431,78 @@ async function loadExhibitions(){
   }
 }
 
-function renderIndustryChips(industries){
-  const all = ['Все отрасли', ...industries];
-  document.getElementById('industryFilters').innerHTML = all.map(i=>{
-    const val = i === 'Все отрасли' ? 'all' : i;
-    return `<div class="industry-chip ${expoIndustry===val?'active':''}" onclick="setExpoIndustry('${val.replace(/'/g,"\\'")}')">${i}</div>`;
-  }).join('');
+// Применяет все фильтры, КРОМЕ указанного измерения (для честного подсчёта "сколько ещё найдётся")
+function matchesExcept(e, except){
+  const statusMatch = except==='status' || expoStatus==='all' || (expoStatus==='upcoming' ? e.upcoming : !e.upcoming);
+  const industryMatch = except==='industry' || expoIndustry==='all' || e.industry===expoIndustry;
+  const cityMatch = except==='city' || expoCity==='all' || e.city===expoCity;
+  const qMatch = !expoQuery || e.name.toLowerCase().includes(expoQuery.toLowerCase()) || (e.city||'').toLowerCase().includes(expoQuery.toLowerCase());
+  return statusMatch && industryMatch && cityMatch && qMatch;
 }
 
-function setExpoIndustry(val){ expoIndustry = val; document.querySelectorAll('.industry-chip').forEach(el=>el.classList.remove('active')); renderExpo();
-  // re-render chips to reflect active state
-  const industries = [...new Set(EXHIBITIONS.map(e=>e.industry))].sort();
-  renderIndustryChips(industries);
+function updateAllFilters(){
+  renderStatusFilters();
+  renderIndustryChips();
+  renderCityChips();
 }
+
+function renderStatusFilters(){
+  const pool = EXHIBITIONS.filter(e => matchesExcept(e, 'status'));
+  const upcomingCount = pool.filter(e => e.upcoming).length;
+  const finishedCount = pool.filter(e => !e.upcoming).length;
+  const opts = [
+    {key:'all', label:'Все выставки', dot:null, count: pool.length},
+    {key:'upcoming', label:'Предстоят', dot:'#2E6B3E', count: upcomingCount},
+    {key:'finished', label:'Прошли', dot:'#5B6773', count: finishedCount},
+  ];
+  document.getElementById('statusFilters').innerHTML = opts.map(o=>`
+    <div class="chip ${expoStatus===o.key?'active':''}" onclick="setExpoStatus('${o.key}')">
+      ${o.dot ? `<span class="dot" style="background:${o.dot}"></span>` : ''}${o.label} <span style="opacity:.65">${o.count}</span>
+    </div>`).join('');
+}
+
+function setExpoStatus(s){ expoStatus = s; updateAllFilters(); renderExpo(); }
+
+function renderIndustryChips(){
+  const pool = EXHIBITIONS.filter(e => matchesExcept(e, 'industry'));
+  const counts = {};
+  pool.forEach(e => { counts[e.industry] = (counts[e.industry]||0) + 1; });
+  const industries = [...new Set(EXHIBITIONS.map(e=>e.industry))].sort();
+
+  let html = `<div class="industry-chip ${expoIndustry==='all'?'active':''}" onclick="setExpoIndustry('all')">Все отрасли <span style="opacity:.65">${pool.length}</span></div>`;
+  html += industries.map(i => {
+    const c = counts[i] || 0;
+    return `<div class="industry-chip ${expoIndustry===i?'active':''} ${c===0?'is-empty':''}" onclick="setExpoIndustry('${i.replace(/'/g,"\\'")}')">${i} <span style="opacity:.65">${c}</span></div>`;
+  }).join('');
+  document.getElementById('industryFilters').innerHTML = html;
+}
+
+function setExpoIndustry(val){ expoIndustry = val; updateAllFilters(); renderExpo(); }
+
+function renderCityChips(){
+  const pool = EXHIBITIONS.filter(e => matchesExcept(e, 'city'));
+  const counts = {};
+  pool.forEach(e => { counts[e.city] = (counts[e.city]||0) + 1; });
+  const sortedCities = Object.keys(counts).sort((a,b) => counts[b]-counts[a]);
+  const allCitiesSorted = [...new Set(EXHIBITIONS.map(e=>e.city))].sort((a,b) => (counts[b]||0)-(counts[a]||0));
+  const TOP_N = 5;
+  const shown = cityExpanded ? allCitiesSorted : allCitiesSorted.slice(0, TOP_N);
+  const hiddenCount = allCitiesSorted.length - TOP_N;
+
+  let html = `<div class="city-chip ${expoCity==='all'?'active':''}" onclick="setExpoCity('all')">Все города <span style="opacity:.65">${pool.length}</span></div>`;
+  html += shown.map(c => {
+    const n = counts[c] || 0;
+    return `<div class="city-chip ${expoCity===c?'active':''} ${n===0?'is-empty':''}" onclick="setExpoCity('${c.replace(/'/g,"\\'")}')">${c} <span style="opacity:.65">${n}</span></div>`;
+  }).join('');
+  if (hiddenCount > 0) {
+    html += `<div class="city-more-toggle" onclick="toggleCityExpand()">${cityExpanded ? 'Свернуть ▲' : `Ещё ${hiddenCount} города ▾`}</div>`;
+  }
+  document.getElementById('cityFilters').innerHTML = html;
+}
+
+function toggleCityExpand(){ cityExpanded = !cityExpanded; renderCityChips(); }
+
+function setExpoCity(val){ expoCity = val; updateAllFilters(); renderExpo(); }
 
 function fmtDate(d){
   const [y,m,day] = d.split('-');
@@ -440,12 +511,7 @@ function fmtDate(d){
 }
 
 function renderExpo(){
-  const filtered = EXHIBITIONS.filter(e=>{
-    const statusMatch = expoStatus==='all' || (expoStatus==='upcoming' ? e.upcoming : !e.upcoming);
-    const industryMatch = expoIndustry==='all' || e.industry===expoIndustry;
-    const qMatch = !expoQuery || e.name.toLowerCase().includes(expoQuery.toLowerCase()) || (e.city||'').toLowerCase().includes(expoQuery.toLowerCase());
-    return statusMatch && industryMatch && qMatch;
-  });
+  const filtered = EXHIBITIONS.filter(e => matchesExcept(e, null));
 
   document.getElementById('expoCards').innerHTML = filtered.map(e => `
     <div class="expo-card">
@@ -470,22 +536,8 @@ function renderExpo(){
     </div>`).join('') || '<div class="legend" style="text-align:center">Ничего не найдено</div>';
 }
 
-function renderStatusFilters(){
-  const opts = [
-    {key:'all', label:'Все выставки', dot:null},
-    {key:'upcoming', label:'Предстоят', dot:'#2E6B3E'},
-    {key:'finished', label:'Прошли', dot:'#5B6773'},
-  ];
-  document.getElementById('statusFilters').innerHTML = opts.map(o=>`
-    <div class="chip ${expoStatus===o.key?'active':''}" onclick="setExpoStatus('${o.key}')">
-      ${o.dot ? `<span class="dot" style="background:${o.dot}"></span>` : ''}${o.label}
-    </div>`).join('');
-}
-
-function setExpoStatus(s){ expoStatus = s; renderStatusFilters(); renderExpo(); }
-
 document.getElementById('expoSearch').addEventListener('input', e=>{
-  expoQuery = e.target.value; renderExpo();
+  expoQuery = e.target.value; updateAllFilters(); renderExpo();
 });
 
 renderFilters();
