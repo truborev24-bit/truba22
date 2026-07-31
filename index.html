@@ -163,11 +163,29 @@
   .expo-foot{display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px dashed var(--border); font-size:12px;}
   .expo-foot a{color:var(--seal-ink); text-decoration:none;}
 
-  select.industry-select{
-    width:100%; padding:11px 14px; border-radius:10px; border:1px solid var(--border);
-    background:var(--surface); font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink);
-    margin-bottom:10px;
+  .industry-filters{display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; scrollbar-width:none;}
+  .industry-filters::-webkit-scrollbar{display:none;}
+  .industry-chip{
+    flex-shrink:0; padding:7px 14px; border-radius:20px; border:1px solid var(--gold);
+    background:var(--surface); font-size:12.5px; color:var(--gold); cursor:pointer; white-space:nowrap;
   }
+  .industry-chip.active{background:var(--gold); color:#fff; border-color:var(--gold);}
+
+  .expo-link-companies{
+    display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:8px 12px;
+    background:var(--surface-2); border-radius:8px; font-size:12px; color:var(--seal-ink);
+    cursor:pointer; font-family:'IBM Plex Mono',monospace;
+  }
+  .expo-link-companies:hover{background:#E5D9B8;}
+
+  .tier-badge{
+    font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:500; letter-spacing:.02em;
+    padding:2px 7px; border-radius:20px; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;
+    margin-top:5px;
+  }
+  .tier-established{background:#EFEAF7; color:#5B3E9E;}
+  .tier-emerging{background:#FFF3E0; color:#B5760A;}
+  .tier-newcomer{background:#E6F4F6; color:#1E7A8C;}
 </style>
 </head>
 <body>
@@ -189,9 +207,7 @@
   <!-- ===== ЭКРАН: ВЫСТАВКИ ===== -->
   <div id="screenExpo">
     <div class="filters" id="statusFilters"></div>
-    <select class="industry-select" id="industrySelect">
-      <option value="all">Все отрасли</option>
-    </select>
+    <div class="industry-filters" id="industryFilters"></div>
     <div class="search-row">
       <input type="text" id="expoSearch" placeholder="Поиск по названию или городу...">
     </div>
@@ -248,7 +264,7 @@ async function loadData(){
       return {
         name: r.name, cn: r.name_cn, type: r.business_type, industry: r.industry,
         website: r.website, email: r.email, phone: r.phone, whatsapp: r.whatsapp,
-        wechat: r.wechat, linkedin: r.linkedin, verified: r.verified,
+        wechat: r.wechat, linkedin: r.linkedin, verified: r.verified, tier: r.tier,
         flagship: fp ? {
           name: fp.name, tag: fp.tag, desc: fp.description,
           img: fp.image_url, emoji: "📦"
@@ -288,8 +304,15 @@ function render(){
     return typeMatch && qMatch;
   });
 
+  const TIER_LABELS = {
+    established: {label:'ДАВНО НА РЫНКЕ', cls:'tier-established', icon:'🏛'},
+    emerging: {label:'АКТИВНО РАСТЁТ', cls:'tier-emerging', icon:'📈'},
+    newcomer: {label:'НОВИЧОК', cls:'tier-newcomer', icon:'🌱'}
+  };
+
   document.getElementById('cards').innerHTML = filtered.map(c=>{
     const t = TYPE_LABELS[c.type];
+    const tier = TIER_LABELS[c.tier];
     return `
     <div class="card">
       <div class="card-top">
@@ -300,6 +323,7 @@ function render(){
         <div style="text-align:right">
           <div style="font-size:9px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; letter-spacing:.03em; margin-bottom:4px;">ТИП БИЗНЕСА</div>
           <div class="type-badge ${t.cls}"><span class="dot"></span>${t.label}</div>
+          ${tier ? `<div class="tier-badge ${tier.cls}">${tier.icon} ${tier.label}</div>` : ''}
         </div>
       </div>
       <div class="card-industry">${c.industry}</div>
@@ -382,13 +406,12 @@ async function loadExhibitions(){
       start: r.start_date, end: r.end_date,
       industry: r.industries ? r.industries.name_ru : r.industry_slug,
       website: r.website,
-      upcoming: new Date(r.end_date) >= today
+      upcoming: new Date(r.end_date) >= today,
+      hasCompanies: r.name_ru === 'Canton Fair 2025 Осень Фаза1'
     }));
 
     const industries = [...new Set(EXHIBITIONS.map(e=>e.industry))].sort();
-    const sel = document.getElementById('industrySelect');
-    sel.innerHTML = '<option value="all">Все отрасли</option>' +
-      industries.map(i=>`<option value="${i}">${i}</option>`).join('');
+    renderIndustryChips(industries);
 
     renderStatusFilters();
     renderExpo();
@@ -396,6 +419,20 @@ async function loadExhibitions(){
     document.getElementById('expoCards').innerHTML =
       `<div class="legend" style="text-align:center">Не удалось загрузить данные (${err.message}).</div>`;
   }
+}
+
+function renderIndustryChips(industries){
+  const all = ['Все отрасли', ...industries];
+  document.getElementById('industryFilters').innerHTML = all.map(i=>{
+    const val = i === 'Все отрасли' ? 'all' : i;
+    return `<div class="industry-chip ${expoIndustry===val?'active':''}" onclick="setExpoIndustry('${val.replace(/'/g,"\\'")}')">${i}</div>`;
+  }).join('');
+}
+
+function setExpoIndustry(val){ expoIndustry = val; document.querySelectorAll('.industry-chip').forEach(el=>el.classList.remove('active')); renderExpo();
+  // re-render chips to reflect active state
+  const industries = [...new Set(EXHIBITIONS.map(e=>e.industry))].sort();
+  renderIndustryChips(industries);
 }
 
 function fmtDate(d){
@@ -428,6 +465,7 @@ function renderExpo(){
         <span class="expo-tag city">${e.city}</span>
       </div>
       <div class="expo-dates"><b>${fmtDate(e.start)}</b> — ${fmtDate(e.end)} · ${e.venue||''}</div>
+      ${e.hasCompanies ? `<div class="expo-link-companies" onclick="switchTab('companies')">🏢 11 компаний собрано — смотреть →</div>` : ''}
       <div class="expo-foot">
         ${e.website ? `<a href="${e.website}" target="_blank">${e.website.replace('https://','').replace('http://','')}</a>` : '<span style="color:var(--ink-soft)">сайт не найден</span>'}
       </div>
@@ -448,9 +486,6 @@ function renderStatusFilters(){
 
 function setExpoStatus(s){ expoStatus = s; renderStatusFilters(); renderExpo(); }
 
-document.getElementById('industrySelect').addEventListener('change', e=>{
-  expoIndustry = e.target.value; renderExpo();
-});
 document.getElementById('expoSearch').addEventListener('input', e=>{
   expoQuery = e.target.value; renderExpo();
 });
