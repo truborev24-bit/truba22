@@ -137,7 +137,15 @@
   /* Exhibitions */
   .expo-card{
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-    padding:16px; margin-bottom:10px;
+    padding:16px; margin-bottom:10px; position:relative;
+  }
+  .expo-flagship{
+    border:2px solid var(--seal); background:linear-gradient(180deg,#FBF3E9,var(--surface) 60px);
+  }
+  .flagship-ribbon{
+    display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600;
+    letter-spacing:.03em; color:#fff; background:var(--seal); padding:4px 10px; border-radius:6px;
+    margin-bottom:10px;
   }
   .expo-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
   .expo-name{font-family:'Newsreader',serif; font-weight:600; font-size:15.5px; line-height:1.3;}
@@ -270,6 +278,7 @@
 
   <!-- ===== ЭКРАН: ВЫСТАВКИ ===== -->
   <div id="screenExpo">
+    <div id="expoSummary" style="font-size:12px; color:var(--ink-soft); margin-bottom:10px; font-family:'IBM Plex Mono',monospace;"></div>
     <div class="search-row">
       <input type="text" id="expoSearch" placeholder="Поиск по названию или городу...">
     </div>
@@ -291,6 +300,8 @@
         <div class="filter-close" onclick="closeFilterModal()">✕</div>
       </div>
       <div class="filter-modal-body">
+        <div class="filter-section-title">ОСОБОЕ</div>
+        <div class="filters" id="flagshipFilter"></div>
         <div class="filter-section-title">СТАТУС</div>
         <div class="filters" id="statusFilters"></div>
         <div class="filter-section-title">ОТРАСЛЬ</div>
@@ -473,6 +484,7 @@ let expoIndustry = "all";
 let expoQuery = "";
 let expoCity = "all";
 let cityExpanded = false;
+let expoFlagshipOnly = false;
 
 function switchTab(tab){
   document.getElementById('tabExpo').classList.toggle('active', tab==='expo');
@@ -500,7 +512,8 @@ async function loadExhibitions(){
       industry: r.industries ? r.industries.name_ru : r.industry_slug,
       website: r.website,
       upcoming: new Date(r.end_date) >= today,
-      hasCompanies: r.name_ru === 'Canton Fair 2025 Осень Фаза1'
+      hasCompanies: r.name_ru === 'Canton Fair 2025 Осень Фаза1',
+      flagship: r.importance_tier === 'flagship'
     }));
 
     updateAllFilters();
@@ -516,24 +529,38 @@ function matchesExcept(e, except){
   const statusMatch = except==='status' || expoStatus==='all' || (expoStatus==='upcoming' ? e.upcoming : !e.upcoming);
   const industryMatch = except==='industry' || expoIndustry==='all' || e.industry===expoIndustry;
   const cityMatch = except==='city' || expoCity==='all' || e.city===expoCity;
+  const flagshipMatch = except==='flagship' || !expoFlagshipOnly || e.flagship;
   const qMatch = !expoQuery || e.name.toLowerCase().includes(expoQuery.toLowerCase()) || (e.city||'').toLowerCase().includes(expoQuery.toLowerCase());
-  return statusMatch && industryMatch && cityMatch && qMatch;
+  return statusMatch && industryMatch && cityMatch && flagshipMatch && qMatch;
 }
 
 function updateAllFilters(){
+  renderFlagshipToggle();
   renderStatusFilters();
   renderIndustryChips();
   renderCityChips();
   renderActiveSummary();
 }
 
+function renderFlagshipToggle(){
+  const pool = EXHIBITIONS.filter(e => matchesExcept(e, 'flagship'));
+  const flagshipCount = pool.filter(e => e.flagship).length;
+  document.getElementById('flagshipFilter').innerHTML = `
+    <div class="chip ${expoFlagshipOnly?'active':''}" onclick="toggleFlagshipOnly()">
+      🔥 Только флагманские <span style="opacity:.65">${flagshipCount}</span>
+    </div>`;
+}
+
+function toggleFlagshipOnly(){ expoFlagshipOnly = !expoFlagshipOnly; updateAllFilters(); renderExpo(); }
+
 function renderActiveSummary(){
-  const activeCount = [expoStatus!=='all', expoIndustry!=='all', expoCity!=='all'].filter(Boolean).length;
+  const activeCount = [expoStatus!=='all', expoIndustry!=='all', expoCity!=='all', expoFlagshipOnly].filter(Boolean).length;
   const badge = document.getElementById('filterBadge');
   badge.style.display = activeCount > 0 ? 'inline-block' : 'none';
   badge.textContent = activeCount;
 
   const pills = [];
+  if (expoFlagshipOnly) pills.push({label: '🔥 Флагманские', clear:()=>{expoFlagshipOnly=false;}});
   if (expoStatus !== 'all') pills.push({label: expoStatus==='upcoming'?'Предстоят':'Прошли', clear:()=>{expoStatus='all';}});
   if (expoIndustry !== 'all') pills.push({label: expoIndustry, clear:()=>{expoIndustry='all';}});
   if (expoCity !== 'all') pills.push({label: expoCity, clear:()=>{expoCity='all';}});
@@ -547,6 +574,10 @@ function renderActiveSummary(){
   const total = EXHIBITIONS.filter(e => matchesExcept(e, null)).length;
   const applyCountEl = document.getElementById('applyCount');
   if (applyCountEl) applyCountEl.textContent = total;
+
+  const flagshipTotal = EXHIBITIONS.filter(e=>e.flagship).length;
+  const summaryEl = document.getElementById('expoSummary');
+  if (summaryEl) summaryEl.textContent = `${EXHIBITIONS.length} выставок всего · 🔥 ${flagshipTotal} флагманских`;
 }
 
 function clearPill(i){
@@ -636,7 +667,8 @@ function renderExpo(){
   const filtered = EXHIBITIONS.filter(e => matchesExcept(e, null));
 
   document.getElementById('expoCards').innerHTML = filtered.map(e => `
-    <div class="expo-card">
+    <div class="expo-card ${e.flagship ? 'expo-flagship' : ''}">
+      ${e.flagship ? '<div class="flagship-ribbon">🔥 ФЛАГМАНСКАЯ</div>' : ''}
       <div class="expo-top">
         <div>
           <div class="expo-name">${e.name}</div>
