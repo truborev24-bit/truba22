@@ -260,6 +260,29 @@
     font-family:'Inter',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer;
   }
 
+  /* Digest + month groups */
+  .section-label{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); letter-spacing:.04em; margin:18px 0 8px;}
+  .section-label:first-child{margin-top:0;}
+  .digest-row{display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; margin-bottom:6px;}
+  .digest-card{
+    flex-shrink:0; width:150px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px;
+  }
+  .digest-card.flag{border-color:var(--seal);}
+  .digest-when{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--seal-ink); font-weight:500;}
+  .digest-name{font-family:'Newsreader',serif; font-weight:600; font-size:13.5px; margin-top:4px; line-height:1.25;}
+  .digest-city{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .month-group{border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden;}
+  .month-header{
+    display:flex; justify-content:space-between; align-items:center; padding:13px 16px; cursor:pointer;
+    background:var(--surface);
+  }
+  .month-header .name{font-family:'Newsreader',serif; font-weight:600; font-size:14.5px;}
+  .month-header .count{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;}
+  .month-header .chev{transition:transform .2s;}
+  .month-header.open .chev{transform:rotate(180deg);}
+  .month-body{display:none; padding:0 12px 12px;}
+  .month-body.open{display:block;}
+
   /* User bar */
   .user-bar{
     display:flex; justify-content:space-between; align-items:center; padding:10px 14px;
@@ -836,10 +859,11 @@ function fmtDate(d){
   return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
 }
 
-function renderExpo(){
-  const filtered = EXHIBITIONS.filter(e => matchesExcept(e, null));
+const MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MONTHS_RU_NOM = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
-  document.getElementById('expoCards').innerHTML = filtered.map(e => `
+function expoCardHtml(e){
+  return `
     <div class="expo-card ${e.flagship ? 'expo-flagship' : ''}">
       ${e.flagship ? '<div class="flagship-ribbon">🔥 ФЛАГМАНСКАЯ</div>' : ''}
       <div class="expo-top">
@@ -860,7 +884,76 @@ function renderExpo(){
       <div class="expo-foot">
         ${e.website ? `<a href="${e.website}" target="_blank">${e.website.replace('https://','').replace('http://','')}</a>` : '<span style="color:var(--ink-soft)">сайт не найден</span>'}
       </div>
-    </div>`).join('') || '<div class="legend" style="text-align:center">Ничего не найдено</div>';
+    </div>`;
+}
+
+function daysUntil(dateStr){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr);
+  return Math.round((d - today) / 86400000);
+}
+
+let openMonthKey = null;
+
+function renderExpo(){
+  const filtered = EXHIBITIONS.filter(e => matchesExcept(e, null));
+
+  // Есть ли активные фильтры/поиск — если да, показываем просто список без дайджеста (человек уже сузил задачу)
+  const hasActiveNarrowing = expoQuery || expoStatus!=='all' || expoIndustry!=='all' || expoCity!=='all' || expoFlagshipOnly;
+
+  if (hasActiveNarrowing) {
+    document.getElementById('expoCards').innerHTML = filtered.map(expoCardHtml).join('') ||
+      '<div class="legend" style="text-align:center">Ничего не найдено</div>';
+    return;
+  }
+
+  // ДАЙДЖЕСТ: 5 ближайших предстоящих
+  const digest = filtered.filter(e=>e.upcoming).slice(0,5);
+  const digestHtml = digest.length ? `
+    <div class="section-label">БЛИЖАЙШИЕ ВЫСТАВКИ</div>
+    <div class="digest-row">
+      ${digest.map(e=>`
+        <div class="digest-card ${e.flagship?'flag':''}">
+          <div class="digest-when">через ${daysUntil(e.start)} дн.</div>
+          <div class="digest-name">${e.name}</div>
+          <div class="digest-city">${e.city}</div>
+        </div>`).join('')}
+    </div>` : '';
+
+  // ГРУППЫ ПО МЕСЯЦАМ
+  const groups = {};
+  const order = [];
+  filtered.forEach(e=>{
+    const d = new Date(e.start);
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if(!groups[key]){ groups[key]=[]; order.push(key); }
+    groups[key].push(e);
+  });
+
+  if (openMonthKey === null && order.length) openMonthKey = order[0];
+
+  const groupsHtml = order.map(key=>{
+    const [y,m] = key.split('-');
+    const label = MONTHS_RU_NOM[parseInt(m)-1] + ' ' + y;
+    const isOpen = key === openMonthKey;
+    return `
+    <div class="month-group">
+      <div class="month-header ${isOpen?'open':''}" onclick="toggleMonth('${key}')">
+        <span class="name">${label}</span>
+        <span class="count">${groups[key].length} <span class="chev">▾</span></span>
+      </div>
+      <div class="month-body ${isOpen?'open':''}" id="month-${key}">
+        ${groups[key].map(expoCardHtml).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('expoCards').innerHTML = digestHtml + `<div class="section-label">ВСЕ ВЫСТАВКИ ПО МЕСЯЦАМ</div>` + (groupsHtml || '<div class="legend" style="text-align:center">Ничего не найдено</div>');
+}
+
+function toggleMonth(key){
+  openMonthKey = (openMonthKey === key) ? null : key;
+  renderExpo();
 }
 
 document.getElementById('expoSearch').addEventListener('input', e=>{
