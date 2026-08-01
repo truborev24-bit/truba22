@@ -282,6 +282,14 @@
   .month-header.open .chev{transform:rotate(180deg);}
   .month-body{display:none; padding:0 12px 12px;}
   .month-body.open{display:block;}
+  .year-tabs{display:flex; gap:6px; margin-bottom:18px;}
+  .year-tab{
+    flex:1; text-align:center; padding:9px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface); font-family:'Newsreader',serif; font-weight:600; font-size:14px;
+    cursor:pointer; color:var(--ink);
+  }
+  .year-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .year-tab.empty{color:var(--ink-soft); opacity:.5;}
 
   /* User bar */
   .user-bar{
@@ -899,6 +907,7 @@ function daysUntil(dateStr){
 }
 
 let openMonthKey = null;
+let selectedYear = null;
 
 function renderExpo(){
   const filtered = EXHIBITIONS.filter(e => matchesExcept(e, null));
@@ -912,7 +921,7 @@ function renderExpo(){
     return;
   }
 
-  // ДАЙДЖЕСТ: 5 ближайших предстоящих
+  // ДАЙДЖЕСТ: 5 ближайших предстоящих (не зависит от выбранного года — это "что скоро")
   const digest = filtered.filter(e=>e.upcoming).slice(0,5);
   const digestHtml = digest.length ? `
     <div class="section-label">БЛИЖАЙШИЕ ВЫСТАВКИ</div>
@@ -925,10 +934,25 @@ function renderExpo(){
         </div>`).join('')}
     </div>` : '';
 
-  // ГРУППЫ ПО МЕСЯЦАМ
+  // ПЕРЕКЛЮЧАТЕЛЬ ГОДА
+  const availableYears = [...new Set(filtered.map(e => new Date(e.start).getFullYear()))].sort();
+  const allYears = [...new Set([2025, 2026, 2027, 2028, ...availableYears])].sort();
+  if (selectedYear === null || !allYears.includes(selectedYear)) {
+    selectedYear = availableYears.length ? availableYears[0] : allYears[0];
+  }
+  const yearTabsHtml = `
+    <div class="year-tabs">
+      ${allYears.map(y => {
+        const hasData = availableYears.includes(y);
+        return `<div class="year-tab ${y===selectedYear?'active':''} ${!hasData?'empty':''}" onclick="${hasData ? `setSelectedYear(${y})` : ''}">${y}</div>`;
+      }).join('')}
+    </div>`;
+
+  // ГРУППЫ ПО МЕСЯЦАМ (только внутри выбранного года)
+  const yearFiltered = filtered.filter(e => new Date(e.start).getFullYear() === selectedYear);
   const groups = {};
   const order = [];
-  filtered.forEach(e=>{
+  yearFiltered.forEach(e=>{
     const d = new Date(e.start);
     const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
     if(!groups[key]){ groups[key]=[]; order.push(key); }
@@ -953,7 +977,15 @@ function renderExpo(){
     </div>`;
   }).join('');
 
-  document.getElementById('expoCards').innerHTML = digestHtml + `<div class="section-label">ВСЕ ВЫСТАВКИ ПО МЕСЯЦАМ</div>` + (groupsHtml || '<div class="legend" style="text-align:center">Ничего не найдено</div>');
+  document.getElementById('expoCards').innerHTML = digestHtml + yearTabsHtml +
+    `<div class="section-label">МЕСЯЦЫ ${selectedYear} ГОДА</div>` +
+    (groupsHtml || '<div class="legend" style="text-align:center">На этот год данных пока нет</div>');
+}
+
+function setSelectedYear(y){
+  selectedYear = y;
+  openMonthKey = null;
+  renderExpo();
 }
 
 function toggleMonth(key){
