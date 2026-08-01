@@ -343,7 +343,7 @@
   <div id="screenExpo">
     <div id="expoSummary" style="font-size:12px; color:var(--ink-soft); margin-bottom:10px; font-family:'IBM Plex Mono',monospace;"></div>
     <div class="search-row">
-      <input type="text" id="expoSearch" placeholder="Поиск по названию или городу...">
+      <input type="text" id="expoSearch" placeholder="Поиск по теме, городу (чай, велосипеды...)">
     </div>
     <div class="filter-trigger-row">
       <div class="filter-trigger" onclick="openFilterModal()">
@@ -709,7 +709,8 @@ async function loadExhibitions(){
       website: r.website,
       upcoming: new Date(r.end_date) >= today,
       hasCompanies: r.name_ru === 'Canton Fair 2025 Осень Фаза1',
-      flagship: r.importance_tier === 'flagship'
+      flagship: r.importance_tier === 'flagship',
+      theme: r.theme_ru, isBroad: r.is_broad
     }));
 
     updateAllFilters();
@@ -726,7 +727,8 @@ function matchesExcept(e, except){
   const industryMatch = except==='industry' || expoIndustry==='all' || e.industry===expoIndustry;
   const cityMatch = except==='city' || expoCity==='all' || e.city===expoCity;
   const flagshipMatch = except==='flagship' || !expoFlagshipOnly || e.flagship;
-  const qMatch = !expoQuery || e.name.toLowerCase().includes(expoQuery.toLowerCase()) || (e.city||'').toLowerCase().includes(expoQuery.toLowerCase());
+  const q = expoQuery.toLowerCase();
+  const qMatch = !expoQuery || e.name.toLowerCase().includes(q) || (e.city||'').toLowerCase().includes(q) || (e.theme||'').toLowerCase().includes(q);
   return statusMatch && industryMatch && cityMatch && flagshipMatch && qMatch;
 }
 
@@ -879,6 +881,9 @@ function expoCardHtml(e){
         <span class="expo-tag industry">${e.industry}</span>
         <span class="expo-tag city">${e.city}</span>
       </div>
+      ${e.theme ? `<div style="display:flex; align-items:center; gap:6px; margin-bottom:10px; font-size:12.5px; color:var(--ink-soft);">
+        <span>${e.isBroad ? '🗂' : '🎯'} ${e.theme}</span>
+      </div>` : ''}
       <div class="expo-dates"><b>${fmtDate(e.start)}</b> — ${fmtDate(e.end)} · ${e.venue||''}</div>
       ${e.hasCompanies ? `<div class="expo-link-companies" onclick="switchTab('companies')">🏢 ${COMPANIES.length} компаний собрано — смотреть →</div>` : ''}
       <div class="expo-foot">
