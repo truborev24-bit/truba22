@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>China Expo Hub — Контакты</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -258,6 +259,40 @@
     background:var(--seal); color:#fff; border:none; padding:11px 22px; border-radius:10px;
     font-family:'Inter',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer;
   }
+
+  /* User bar */
+  .user-bar{
+    display:flex; justify-content:space-between; align-items:center; padding:10px 14px;
+    background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:14px;
+    font-size:12.5px; color:var(--ink-soft);
+  }
+  .user-bar .name{color:var(--ink); font-weight:600;}
+  .sub-badge{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 9px; border-radius:20px; cursor:pointer;
+  }
+  .sub-badge.guest{background:var(--surface-2); color:var(--ink-soft);}
+  .sub-badge.pro{background:var(--gold); color:#fff;}
+
+  /* Favorite star */
+  .fav-star{
+    font-size:20px; cursor:pointer; user-select:none; line-height:1; flex-shrink:0;
+    filter:grayscale(1); opacity:.4;
+  }
+  .fav-star.active{filter:none; opacity:1;}
+
+  /* Gated (locked) contact content */
+  .contact-row.locked{position:relative;}
+  .contact-row.locked > *:not(.lock-overlay){filter:blur(4px); user-select:none; pointer-events:none;}
+  .locked-block{
+    position:relative; border:1px dashed var(--gold); border-radius:10px; padding:12px;
+    margin-top:4px; background:#FBF8F1;
+  }
+  .locked-block .content{filter:blur(5px); user-select:none; pointer-events:none;}
+  .unlock-btn{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; background:rgba(255,255,255,.75); border-radius:10px; cursor:pointer; border:none;
+    font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; color:var(--seal-ink);
+  }
 </style>
 </head>
 <body>
@@ -270,6 +305,11 @@
       <div class="sub" id="pageSub">2025–2026 · ручной сбор из открытых источников</div>
     </div>
   </header>
+
+  <div class="user-bar">
+    <span class="name" id="userName">👤 Гость</span>
+    <span class="sub-badge guest" id="subBadge" onclick="toggleDemoSubscription()">ГОСТЬ · нажмите для demo-Pro</span>
+  </div>
 
   <div class="tabs">
     <div class="tab active" id="tabExpo" onclick="switchTab('expo')">Выставки</div>
@@ -307,396 +347,4 @@
         <div class="filter-section-title">ОТРАСЛЬ</div>
         <div class="industry-filters" id="industryFilters"></div>
         <div class="filter-section-title">ГОРОД</div>
-        <div class="city-filters" id="cityFilters"></div>
-      </div>
-      <div class="filter-modal-footer">
-        <span class="filter-reset" onclick="resetAllFilters()">Сбросить всё</span>
-        <button class="filter-apply" onclick="closeFilterModal()">Показать <span id="applyCount">0</span></button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== ЭКРАН: КОМПАНИИ ===== -->
-  <div id="screenCompanies" style="display:none">
-    <div class="exhibition-strip">
-      <div>
-        <b>Canton Fair 2025, Осень · Фаза 1</b><br>
-        138-я сессия, окт 2025
-      </div>
-      <div class="count">11 / 900+ найдено</div>
-    </div>
-
-    <div class="filters" id="filters"></div>
-
-    <div class="search-row">
-      <input type="text" id="search" placeholder="Поиск по названию компании...">
-    </div>
-
-    <div id="cards"></div>
-
-    <div class="legend">
-      <b>КАК ЧИТАТЬ КЛАССИФИКАЦИЮ</b><br>
-      <span style="color:#2E6B3E">●</span> Фабрика — есть производственные мощности, OEM/ODM, найдено на сайте/в профиле<br>
-      <span style="color:var(--seal)">●</span> Трейдер/Дистрибьютор — торговая компания, посредник, wholesale<br>
-      <span style="color:#5B3E9E">●</span> Частный бренд — молодая компания, D2C/онлайн модель<br><br>
-      Контакты помечены серым и приглушены, если не найдены в открытых источниках — это честный пробел, не ошибка.
-    </div>
-  </div>
-
-</div>
-
-<script>
-const SUPABASE_URL = "https://ujaxbpewxkkciqufgngl.supabase.co";
-const SUPABASE_KEY = "sb_publishable_tgtetbguwWGFy8rz_D5xCA_j95eY53U";
-
-let COMPANIES = [];
-
-async function loadData(){
-  document.getElementById('cards').innerHTML = '<div class="legend" style="text-align:center">Загрузка данных…</div>';
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/companies?select=*,flagship_products(*)&order=name.asc`,
-      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-    );
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-
-    COMPANIES = rows.map(r => {
-      const fp = (r.flagship_products && r.flagship_products[0]) || null;
-      return {
-        name: r.name, cn: r.name_cn, type: r.business_type, industry: r.industry,
-        website: r.website, email: r.email, phone: r.phone, whatsapp: r.whatsapp,
-        wechat: r.wechat, linkedin: r.linkedin, verified: r.verified, tier: r.tier,
-        flagship: fp ? {
-          name: fp.name, tag: fp.tag, desc: fp.description,
-          img: fp.image_url, emoji: "📦"
-        } : { name: "Новинка уточняется", tag: "", desc: "Информация о флагманском товаре пока не собрана.", emoji: "📦", img: null }
-      };
-    });
-
-    renderFilters();
-    render();
-  } catch (err) {
-    document.getElementById('cards').innerHTML =
-      `<div class="legend" style="text-align:center">Не удалось загрузить данные (${err.message}). Обновите страницу.</div>`;
-  }
-}
-
-const TYPE_LABELS = {
-  factory: {label:"ФАБРИКА", cls:"type-factory"},
-  trader: {label:"ТРЕЙДЕР", cls:"type-trader"},
-  brand: {label:"БРЕНД", cls:"type-brand"}
-};
-
-let activeType = "all";
-let query = "";
-
-function contactRow(icon, value, isLink){
-  if(!value){
-    return `<div class="contact-row muted"><div class="ico">${icon}</div><span>не найдено в открытых источниках</span></div>`;
-  }
-  const content = isLink ? `<a href="${value.startsWith('http')?value:'https://'+value}" target="_blank">${value.replace('https://','').replace('http://','')}</a>` : `<span>${value}</span>`;
-  return `<div class="contact-row"><div class="ico">${icon}</div>${content}</div>`;
-}
-
-function render(){
-  const filtered = COMPANIES.filter(c=>{
-    const typeMatch = activeType === "all" || c.type === activeType;
-    const qMatch = !query || c.name.toLowerCase().includes(query.toLowerCase());
-    return typeMatch && qMatch;
-  });
-
-  const TIER_LABELS = {
-    established: {label:'ДАВНО НА РЫНКЕ', cls:'tier-established', icon:'🏛'},
-    emerging: {label:'АКТИВНО РАСТЁТ', cls:'tier-emerging', icon:'📈'},
-    newcomer: {label:'НОВИЧОК', cls:'tier-newcomer', icon:'🌱'}
-  };
-
-  document.getElementById('cards').innerHTML = filtered.map(c=>{
-    const t = TYPE_LABELS[c.type];
-    const tier = TIER_LABELS[c.tier];
-    return `
-    <div class="card">
-      <div class="card-top">
-        <div>
-          <div class="card-name">${c.name}</div>
-          ${c.cn ? `<div class="card-cn">${c.cn}</div>` : ''}
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:9px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; letter-spacing:.03em; margin-bottom:4px;">ТИП БИЗНЕСА</div>
-          <div class="type-badge ${t.cls}"><span class="dot"></span>${t.label}</div>
-          ${tier ? `<div class="tier-badge ${tier.cls}">${tier.icon} ${tier.label}</div>` : ''}
-        </div>
-      </div>
-      <div class="card-industry">${c.industry}</div>
-      <div class="flagship">
-        <div class="flagship-icon" ${c.flagship.img ? `style="padding:0; overflow:hidden;"` : ''}>
-          ${c.flagship.img
-            ? `<img src="${c.flagship.img}" alt="${c.flagship.name}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.padding='';this.outerHTML='${c.flagship.emoji}';">`
-            : c.flagship.emoji}
-        </div>
-        <div class="flagship-body">
-          <span class="flagship-tag">${c.flagship.tag}</span>
-          <div class="flagship-name">${c.flagship.name}</div>
-          <div class="flagship-desc">${c.flagship.desc}</div>
-        </div>
-      </div>
-      <div class="contact-grid">
-        ${contactRow('🌐', c.website, true)}
-        ${contactRow('✉️', c.email, false)}
-        ${contactRow('📞', c.phone, false)}
-        ${contactRow('💬', c.whatsapp, false)}
-        ${contactRow('🔗', c.linkedin, true)}
-      </div>
-      <div class="card-foot">
-        <span>Canton Fair 2025 · Осень</span>
-        ${c.verified ? '<div class="verified"><span class="dot"></span>ПОДТВЕРЖДЕНО</div>' : '<div class="verified" style="opacity:.4"><span class="dot" style="background:var(--ink-soft)"></span>ЧАСТИЧНО</div>'}
-      </div>
-    </div>`;
-  }).join('') || '<div class="legend" style="text-align:center">Ничего не найдено по этому фильтру</div>';
-}
-
-function renderFilters(){
-  const types = [
-    {key:'all', label:'Все компании', dot:null},
-    {key:'factory', label:'Фабрики', dot:'#2E6B3E'},
-    {key:'trader', label:'Трейдеры', dot:'#B4302A'},
-    {key:'brand', label:'Бренды', dot:'#5B3E9E'},
-  ];
-  document.getElementById('filters').innerHTML = types.map(t=>`
-    <div class="chip ${activeType===t.key?'active':''}" onclick="setType('${t.key}')">
-      ${t.dot ? `<span class="dot" style="background:${t.dot}"></span>` : ''}${t.label}
-    </div>`).join('');
-}
-
-function setType(t){ activeType = t; renderFilters(); render(); }
-
-document.getElementById('search').addEventListener('input', e=>{
-  query = e.target.value; render();
-});
-
-// ============================================================
-// ВЫСТАВКИ
-// ============================================================
-let EXHIBITIONS = [];
-let expoStatus = "all";
-let expoIndustry = "all";
-let expoQuery = "";
-let expoCity = "all";
-let cityExpanded = false;
-let expoFlagshipOnly = false;
-
-function switchTab(tab){
-  document.getElementById('tabExpo').classList.toggle('active', tab==='expo');
-  document.getElementById('tabCompanies').classList.toggle('active', tab==='companies');
-  document.getElementById('screenExpo').style.display = tab==='expo' ? 'block' : 'none';
-  document.getElementById('screenCompanies').style.display = tab==='companies' ? 'block' : 'none';
-  document.getElementById('pageTitle').textContent = tab==='expo' ? 'Выставки Китая' : 'Контакты участников';
-  document.getElementById('pageSub').textContent = tab==='expo' ? '2025–2026 · ручной сбор из открытых источников' : 'Тестовая модель · ручной сбор из открытых источников';
-}
-
-async function loadExhibitions(){
-  document.getElementById('expoCards').innerHTML = '<div class="legend" style="text-align:center">Загрузка данных…</div>';
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/exhibition_catalog?select=*,industries(name_ru)&order=start_date.asc`,
-      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-    );
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const rows = await res.json();
-    const today = new Date(); today.setHours(0,0,0,0);
-
-    EXHIBITIONS = rows.map(r => ({
-      name: r.name_ru, en: r.name_en, city: r.city, venue: r.venue,
-      start: r.start_date, end: r.end_date,
-      industry: r.industries ? r.industries.name_ru : r.industry_slug,
-      website: r.website,
-      upcoming: new Date(r.end_date) >= today,
-      hasCompanies: r.name_ru === 'Canton Fair 2025 Осень Фаза1',
-      flagship: r.importance_tier === 'flagship'
-    }));
-
-    updateAllFilters();
-    renderExpo();
-  } catch (err) {
-    document.getElementById('expoCards').innerHTML =
-      `<div class="legend" style="text-align:center">Не удалось загрузить данные (${err.message}).</div>`;
-  }
-}
-
-// Применяет все фильтры, КРОМЕ указанного измерения (для честного подсчёта "сколько ещё найдётся")
-function matchesExcept(e, except){
-  const statusMatch = except==='status' || expoStatus==='all' || (expoStatus==='upcoming' ? e.upcoming : !e.upcoming);
-  const industryMatch = except==='industry' || expoIndustry==='all' || e.industry===expoIndustry;
-  const cityMatch = except==='city' || expoCity==='all' || e.city===expoCity;
-  const flagshipMatch = except==='flagship' || !expoFlagshipOnly || e.flagship;
-  const qMatch = !expoQuery || e.name.toLowerCase().includes(expoQuery.toLowerCase()) || (e.city||'').toLowerCase().includes(expoQuery.toLowerCase());
-  return statusMatch && industryMatch && cityMatch && flagshipMatch && qMatch;
-}
-
-function updateAllFilters(){
-  renderFlagshipToggle();
-  renderStatusFilters();
-  renderIndustryChips();
-  renderCityChips();
-  renderActiveSummary();
-}
-
-function renderFlagshipToggle(){
-  const pool = EXHIBITIONS.filter(e => matchesExcept(e, 'flagship'));
-  const flagshipCount = pool.filter(e => e.flagship).length;
-  document.getElementById('flagshipFilter').innerHTML = `
-    <div class="chip ${expoFlagshipOnly?'active':''}" onclick="toggleFlagshipOnly()">
-      🔥 Только флагманские <span style="opacity:.65">${flagshipCount}</span>
-    </div>`;
-}
-
-function toggleFlagshipOnly(){ expoFlagshipOnly = !expoFlagshipOnly; updateAllFilters(); renderExpo(); }
-
-function renderActiveSummary(){
-  const activeCount = [expoStatus!=='all', expoIndustry!=='all', expoCity!=='all', expoFlagshipOnly].filter(Boolean).length;
-  const badge = document.getElementById('filterBadge');
-  badge.style.display = activeCount > 0 ? 'inline-block' : 'none';
-  badge.textContent = activeCount;
-
-  const pills = [];
-  if (expoFlagshipOnly) pills.push({label: '🔥 Флагманские', clear:()=>{expoFlagshipOnly=false;}});
-  if (expoStatus !== 'all') pills.push({label: expoStatus==='upcoming'?'Предстоят':'Прошли', clear:()=>{expoStatus='all';}});
-  if (expoIndustry !== 'all') pills.push({label: expoIndustry, clear:()=>{expoIndustry='all';}});
-  if (expoCity !== 'all') pills.push({label: expoCity, clear:()=>{expoCity='all';}});
-
-  document.getElementById('activePills').innerHTML = pills.map((p,i)=>
-    `<div class="active-pill">${p.label} <span class="x" onclick="clearPill(${i})">✕</span></div>`
-  ).join('');
-
-  window._activePillClears = pills.map(p=>p.clear);
-
-  const total = EXHIBITIONS.filter(e => matchesExcept(e, null)).length;
-  const applyCountEl = document.getElementById('applyCount');
-  if (applyCountEl) applyCountEl.textContent = total;
-
-  const flagshipTotal = EXHIBITIONS.filter(e=>e.flagship).length;
-  const summaryEl = document.getElementById('expoSummary');
-  if (summaryEl) summaryEl.textContent = `${EXHIBITIONS.length} выставок всего · 🔥 ${flagshipTotal} флагманских`;
-}
-
-function clearPill(i){
-  window._activePillClears[i]();
-  updateAllFilters();
-  renderExpo();
-}
-
-function resetAllFilters(){
-  expoStatus = 'all'; expoIndustry = 'all'; expoCity = 'all';
-  updateAllFilters();
-  renderExpo();
-}
-
-function openFilterModal(){
-  document.getElementById('filterOverlay').classList.add('open');
-}
-function closeFilterModal(){
-  document.getElementById('filterOverlay').classList.remove('open');
-}
-
-function renderStatusFilters(){
-  const pool = EXHIBITIONS.filter(e => matchesExcept(e, 'status'));
-  const upcomingCount = pool.filter(e => e.upcoming).length;
-  const finishedCount = pool.filter(e => !e.upcoming).length;
-  const opts = [
-    {key:'all', label:'Все выставки', dot:null, count: pool.length},
-    {key:'upcoming', label:'Предстоят', dot:'#2E6B3E', count: upcomingCount},
-    {key:'finished', label:'Прошли', dot:'#5B6773', count: finishedCount},
-  ];
-  document.getElementById('statusFilters').innerHTML = opts.map(o=>`
-    <div class="chip ${expoStatus===o.key?'active':''}" onclick="setExpoStatus('${o.key}')">
-      ${o.dot ? `<span class="dot" style="background:${o.dot}"></span>` : ''}${o.label} <span style="opacity:.65">${o.count}</span>
-    </div>`).join('');
-}
-
-function setExpoStatus(s){ expoStatus = s; updateAllFilters(); renderExpo(); }
-
-function renderIndustryChips(){
-  const pool = EXHIBITIONS.filter(e => matchesExcept(e, 'industry'));
-  const counts = {};
-  pool.forEach(e => { counts[e.industry] = (counts[e.industry]||0) + 1; });
-  const industries = [...new Set(EXHIBITIONS.map(e=>e.industry))].sort();
-
-  let html = `<div class="industry-chip ${expoIndustry==='all'?'active':''}" onclick="setExpoIndustry('all')">Все отрасли <span style="opacity:.65">${pool.length}</span></div>`;
-  html += industries.map(i => {
-    const c = counts[i] || 0;
-    return `<div class="industry-chip ${expoIndustry===i?'active':''} ${c===0?'is-empty':''}" onclick="setExpoIndustry('${i.replace(/'/g,"\\'")}')">${i} <span style="opacity:.65">${c}</span></div>`;
-  }).join('');
-  document.getElementById('industryFilters').innerHTML = html;
-}
-
-function setExpoIndustry(val){ expoIndustry = val; updateAllFilters(); renderExpo(); }
-
-function renderCityChips(){
-  const pool = EXHIBITIONS.filter(e => matchesExcept(e, 'city'));
-  const counts = {};
-  pool.forEach(e => { counts[e.city] = (counts[e.city]||0) + 1; });
-  const sortedCities = Object.keys(counts).sort((a,b) => counts[b]-counts[a]);
-  const allCitiesSorted = [...new Set(EXHIBITIONS.map(e=>e.city))].sort((a,b) => (counts[b]||0)-(counts[a]||0));
-  const TOP_N = 5;
-  const shown = cityExpanded ? allCitiesSorted : allCitiesSorted.slice(0, TOP_N);
-  const hiddenCount = allCitiesSorted.length - TOP_N;
-
-  let html = `<div class="city-chip ${expoCity==='all'?'active':''}" onclick="setExpoCity('all')">Все города <span style="opacity:.65">${pool.length}</span></div>`;
-  html += shown.map(c => {
-    const n = counts[c] || 0;
-    return `<div class="city-chip ${expoCity===c?'active':''} ${n===0?'is-empty':''}" onclick="setExpoCity('${c.replace(/'/g,"\\'")}')">${c} <span style="opacity:.65">${n}</span></div>`;
-  }).join('');
-  if (hiddenCount > 0) {
-    html += `<div class="city-more-toggle" onclick="toggleCityExpand()">${cityExpanded ? 'Свернуть ▲' : `Ещё ${hiddenCount} города ▾`}</div>`;
-  }
-  document.getElementById('cityFilters').innerHTML = html;
-}
-
-function toggleCityExpand(){ cityExpanded = !cityExpanded; renderCityChips(); }
-
-function setExpoCity(val){ expoCity = val; updateAllFilters(); renderExpo(); }
-
-function fmtDate(d){
-  const [y,m,day] = d.split('-');
-  const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-  return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`;
-}
-
-function renderExpo(){
-  const filtered = EXHIBITIONS.filter(e => matchesExcept(e, null));
-
-  document.getElementById('expoCards').innerHTML = filtered.map(e => `
-    <div class="expo-card ${e.flagship ? 'expo-flagship' : ''}">
-      ${e.flagship ? '<div class="flagship-ribbon">🔥 ФЛАГМАНСКАЯ</div>' : ''}
-      <div class="expo-top">
-        <div>
-          <div class="expo-name">${e.name}</div>
-          ${e.en ? `<div class="expo-en">${e.en}</div>` : ''}
-        </div>
-        <div class="status-badge ${e.upcoming ? 'status-upcoming' : 'status-finished'}">
-          <span class="dot"></span>${e.upcoming ? 'ПРЕДСТОИТ' : 'ПРОШЛА'}
-        </div>
-      </div>
-      <div class="expo-meta">
-        <span class="expo-tag industry">${e.industry}</span>
-        <span class="expo-tag city">${e.city}</span>
-      </div>
-      <div class="expo-dates"><b>${fmtDate(e.start)}</b> — ${fmtDate(e.end)} · ${e.venue||''}</div>
-      ${e.hasCompanies ? `<div class="expo-link-companies" onclick="switchTab('companies')">🏢 11 компаний собрано — смотреть →</div>` : ''}
-      <div class="expo-foot">
-        ${e.website ? `<a href="${e.website}" target="_blank">${e.website.replace('https://','').replace('http://','')}</a>` : '<span style="color:var(--ink-soft)">сайт не найден</span>'}
-      </div>
-    </div>`).join('') || '<div class="legend" style="text-align:center">Ничего не найдено</div>';
-}
-
-document.getElementById('expoSearch').addEventListener('input', e=>{
-  expoQuery = e.target.value; updateAllFilters(); renderExpo();
-});
-
-renderFilters();
-loadData();
-loadExhibitions();
-</script>
-</body>
-</html>
+        <div class="city-filters" id="cityFilters"></div
