@@ -369,7 +369,7 @@
     <div class="filters" id="filters"></div>
 
     <div class="search-row">
-      <input type="text" id="search" placeholder="Поиск по названию компании...">
+      <input type="text" id="search" placeholder="Поиск по названию или товару (роботы, подгузники...)">
     </div>
 
     <div id="cards"></div>
@@ -499,7 +499,7 @@ async function loadData(){
   document.getElementById('cards').innerHTML = '<div class="legend" style="text-align:center">Загрузка данных…</div>';
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/companies?select=*,flagship_products(*)&order=name.asc`,
+      `${SUPABASE_URL}/rest/v1/companies?select=*,flagship_products(*),company_product_tags(product_tags(name_ru,slug))&order=name.asc`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
     );
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -507,12 +507,14 @@ async function loadData(){
 
     COMPANIES = rows.map(r => {
       const fp = (r.flagship_products && r.flagship_products[0]) || null;
+      const tags = (r.company_product_tags || []).map(t => t.product_tags).filter(Boolean);
       return {
         id: r.id, name: r.name, cn: r.name_cn, type: r.business_type, industry: r.industry,
         website: r.website, email: r.email, phone: r.phone, whatsapp: r.whatsapp,
         wechat: r.wechat, linkedin: r.linkedin, verified: r.verified, tier: r.tier,
         contactName: r.contact_name, contactPosition: r.contact_position,
         qrWechat: r.qr_wechat, qrWhatsapp: r.qr_whatsapp,
+        productTags: tags,
         flagship: fp ? {
           name: fp.name, tag: fp.tag, desc: fp.description,
           img: fp.image_url, emoji: "📦"
@@ -549,7 +551,9 @@ function contactRow(icon, value, isLink){
 function render(){
   const filtered = COMPANIES.filter(c=>{
     const typeMatch = activeType === "all" || c.type === activeType;
-    const qMatch = !query || c.name.toLowerCase().includes(query.toLowerCase());
+    const q = query.toLowerCase();
+    const tagMatch = c.productTags.some(t => t.name_ru.toLowerCase().includes(q));
+    const qMatch = !query || c.name.toLowerCase().includes(q) || tagMatch;
     return typeMatch && qMatch;
   });
 
@@ -581,6 +585,7 @@ function render(){
         </div>
       </div>
       <div class="card-industry">${c.industry}</div>
+      ${c.productTags.length ? `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${c.productTags.map(t=>`<span style="font-size:11px; background:var(--surface-2); border:1px solid var(--seal); color:var(--seal-ink); padding:3px 9px; border-radius:20px; font-family:'IBM Plex Mono',monospace;">#${t.name_ru}</span>`).join('')}</div>` : ''}
       <div class="flagship">
         <div class="flagship-icon" ${c.flagship.img ? `style="padding:0; overflow:hidden;"` : ''}>
           ${c.flagship.img
